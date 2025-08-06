@@ -186,7 +186,7 @@
     'Tic Tac Toe', 'Taş Kağıt Makas', 'Hafıza Oyunu', 'Yılan Oyunu', 'Quiz Oyunu',
     'Topu Yakala', 'Renkli Kutular', 'Hızlı Tıklama', 'Engelden Kaç', 'Matematik Testi',
     'Balon Patlatma', 'Kelime Tahmin', 'Harf Sayısı', 'Renk Değiştirme', 'Basit Labirent',
-    'Sayı Tahmini', 'Denge Oyunu', 'Kutu Tıklama', 'Döner Topu Durdur', 'Hedef Vurma',
+    'basitFPS', 'Denge Oyunu', 'Kutu Tıklama', 'Döner Topu Durdur', 'Hedef Vurma',
     'Sudoku', 'Mayın Tarlası', 'Adam Asmaca', '4 İşlem Oyunu', 'Zamana Karşı Sayılar',
     'Büyüyen Kutular', 'Refleks Testi', 'Eşitlik Bul', 'Sürükle Bırak', 'Hafıza Kartları'
   ];
@@ -234,7 +234,7 @@
       case 12: harfSayisi(); break;
       case 13: renkDegistirme(); break;
       case 14: basitLabirent(); break;
-      case 15: sayiTahmini(); break;
+      case 15: basitFPS(); break;
       case 16: dengeOyunu(); break;
       case 17: kutuTiklama(); break;
       case 18: donerTopuDurdur(); break;
@@ -1210,6 +1210,1300 @@
     drawMaze();
   }
 
+  /* --- 17. Denge Oyunu --- */
+  function dengeOyunu() {
+    gameArea.innerHTML = `
+      <h2>Denge Oyunu</h2>
+      <div style="position:relative; height:200px; margin:2rem auto; border-bottom:2px solid #fff;">
+        <div id="balanceBar" style="position:absolute; top:0; left:50%; width:4px; height:200px; background:#fff; transform:translateX(-50%);"></div>
+        <div id="balanceBall" style="position:absolute; top:180px; left:50%; width:20px; height:20px; background:#f00; border-radius:50%; transform:translate(-50%, -50%);"></div>
+      </div>
+      <p id="balanceTime" style="text-align:center; font-weight:bold;">Süre: 0 saniye</p>
+      <button class="game-btn" id="balanceStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+    `;
+
+    const balanceBar = document.getElementById('balanceBar');
+    const balanceBall = document.getElementById('balanceBall');
+    const balanceTime = document.getElementById('balanceTime');
+    const balanceStart = document.getElementById('balanceStart');
+
+    let angle = 0;
+    let speed = 0;
+    let position = 0;
+    let gameActive = false;
+    let startTime = 0;
+    let timerId;
+
+    function updateGame() {
+      if (!gameActive) return;
+      
+      // Fizik hesaplamaları
+      speed += Math.sin(angle * Math.PI / 180) * 0.05;
+      position += speed;
+      angle += position;
+      
+      // Sınır kontrolü
+      if (Math.abs(angle) > 30) {
+        endGame();
+        return;
+      }
+      
+      // Çizim
+      balanceBar.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+      balanceBall.style.left = `${50 + position * 2}%`;
+      
+      // Zamanı güncelle
+      balanceTime.textContent = `Süre: ${Math.floor((Date.now() - startTime) / 1000)} saniye`;
+      
+      timerId = requestAnimationFrame(updateGame);
+    }
+
+    function startGame() {
+      angle = 0;
+      speed = 0;
+      position = 0;
+      gameActive = true;
+      startTime = Date.now();
+      balanceStart.disabled = true;
+      updateGame();
+    }
+
+    function endGame() {
+      gameActive = false;
+      cancelAnimationFrame(timerId);
+      balanceStart.disabled = false;
+      alert(`Oyun bitti! Dengede kalma süreniz: ${Math.floor((Date.now() - startTime) / 1000)} saniye`);
+    }
+
+    document.onkeydown = (e) => {
+      if (!gameActive) return;
+      if (e.key === 'ArrowLeft') {
+        position -= 0.5;
+      } else if (e.key === 'ArrowRight') {
+        position += 0.5;
+      }
+    };
+
+    balanceStart.onclick = startGame;
+  }
+
+   /* --- 18. Kutu Tıklama --- */
+  function kutuTiklama() {
+    let score = 0;
+    let timeLeft = 30;
+    let timerId;
+
+    gameArea.innerHTML = `
+      <h2>Kutu Tıklama</h2>
+      <p id="clickScore" style="text-align:center; font-weight:bold;">Puan: 0</p>
+      <p id="clickTime" style="text-align:center; font-weight:bold;">Kalan Süre: 30</p>
+      <div id="clickBox" style="width:100px; height:100px; background:#f00; margin:1rem auto; border-radius:12px; cursor:pointer;"></div>
+      <button class="game-btn" id="clickStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+    `;
+
+    const clickScore = document.getElementById('clickScore');
+    const clickTime = document.getElementById('clickTime');
+    const clickBox = document.getElementById('clickBox');
+    const clickStart = document.getElementById('clickStart');
+
+    function updateBox() {
+      const size = Math.random() * 50 + 50;
+      const x = Math.random() * (gameArea.clientWidth - size - 40);
+      const y = Math.random() * 200 + 50;
+      clickBox.style.width = `${size}px`;
+      clickBox.style.height = `${size}px`;
+      clickBox.style.left = `${x}px`;
+      clickBox.style.top = `${y}px`;
+      clickBox.style.backgroundColor = `hsl(${Math.random() * 360}, 80%, 60%)`;
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 30;
+      clickScore.textContent = `Puan: ${score}`;
+      clickTime.textContent = `Kalan Süre: ${timeLeft}`;
+      clickStart.disabled = true;
+      updateBox();
+      
+      timerId = setInterval(() => {
+        timeLeft--;
+        clickTime.textContent = `Kalan Süre: ${timeLeft}`;
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      clearInterval(timerId);
+      clickStart.disabled = false;
+      alert(`Oyun bitti! Puanınız: ${score}`);
+    }
+
+    clickBox.onclick = () => {
+      if (clickStart.disabled) {
+        score++;
+        clickScore.textContent = `Puan: ${score}`;
+        updateBox();
+      }
+    };
+
+    clickStart.onclick = startGame;
+  }
+
+   /* --- 19. Döner Topu Durdur --- */
+  function donerTopuDurdur() {
+    let angle = 0;
+    let speed = 10;
+    let spinning = false;
+    let targetAngle = 0;
+    let timerId;
+
+    gameArea.innerHTML = `
+      <h2>Döner Topu Durdur</h2>
+      <div style="position:relative; width:200px; height:200px; margin:1rem auto;">
+        <div id="spinnerCircle" style="position:absolute; width:100%; height:100%; border-radius:50%; border:4px solid #357ABD;"></div>
+        <div id="spinnerBall" style="position:absolute; top:10px; left:50%; width:20px; height:20px; background:#f00; border-radius:50%; transform-origin:50% 100px;"></div>
+        <div id="spinnerTarget" style="position:absolute; top:0; left:50%; width:4px; height:40px; background:#0f0; transform-origin:50% 100px;"></div>
+      </div>
+      <p id="spinnerResult" style="text-align:center; font-weight:bold;"></p>
+      <button class="game-btn" id="spinnerStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+      <button class="game-btn" id="spinnerStop" disabled style="display:block; margin:1rem auto 0 auto;">Durdur</button>
+    `;
+
+    const spinnerCircle = document.getElementById('spinnerCircle');
+    const spinnerBall = document.getElementById('spinnerBall');
+    const spinnerTarget = document.getElementById('spinnerTarget');
+    const spinnerResult = document.getElementById('spinnerResult');
+    const spinnerStart = document.getElementById('spinnerStart');
+    const spinnerStop = document.getElementById('spinnerStop');
+
+    function updateSpinner() {
+      angle = (angle + speed) % 360;
+      spinnerBall.style.transform = `rotate(${angle}deg) translateY(-80px)`;
+      
+      if (spinning) {
+        speed = Math.max(0.2, speed * 0.99);
+      }
+      
+      if (speed <= 0.3 && spinning) {
+        spinning = false;
+        checkResult();
+      }
+    }
+
+    function startSpinning() {
+      angle = 0;
+      speed = 10;
+      spinning = true;
+      spinnerStart.disabled = true;
+      spinnerStop.disabled = false;
+      spinnerResult.textContent = '';
+      targetAngle = Math.floor(Math.random() * 360);
+      spinnerTarget.style.transform = `rotate(${targetAngle}deg) translateY(-80px)`;
+      timerId = setInterval(updateSpinner, 20);
+    }
+
+    function stopSpinning() {
+      spinning = false;
+      spinnerStop.disabled = true;
+    }
+
+    function checkResult() {
+      clearInterval(timerId);
+      const diff = Math.abs((angle - targetAngle + 180) % 360 - 180);
+      if (diff < 15) {
+        spinnerResult.textContent = 'Mükemmel! Tam isabet!';
+      } else if (diff < 45) {
+        spinnerResult.textContent = 'İyi! Yakın bir sonuç.';
+      } else {
+        spinnerResult.textContent = 'Tekrar deneyin!';
+      }
+      spinnerStart.disabled = false;
+    }
+
+    spinnerStart.onclick = startSpinning;
+    spinnerStop.onclick = stopSpinning;
+  }
+
+   /* --- 20. Hedef Vurma --- */
+  function hedefVurma() {
+    let score = 0;
+    let timeLeft = 30;
+    let timerId;
+    let targetInterval;
+
+    gameArea.innerHTML = `
+      <h2>Hedef Vurma</h2>
+      <p id="targetScore" style="text-align:center; font-weight:bold;">Puan: 0</p>
+      <p id="targetTime" style="text-align:center; font-weight:bold;">Kalan Süre: 30</p>
+      <canvas id="targetCanvas" width="400" height="300" style="background:#222; display:block; margin:0 auto; border-radius:12px;"></canvas>
+      <button class="game-btn" id="targetStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+    `;
+
+    const canvas = document.getElementById('targetCanvas');
+    const ctx = canvas.getContext('2d');
+    const targetScore = document.getElementById('targetScore');
+    const targetTime = document.getElementById('targetTime');
+    const targetStart = document.getElementById('targetStart');
+
+    let targets = [];
+    const targetRadius = 20;
+
+    function createTarget() {
+      return {
+        x: Math.random() * (canvas.width - 2 * targetRadius) + targetRadius,
+        y: Math.random() * (canvas.height - 2 * targetRadius) + targetRadius,
+        radius: targetRadius,
+        color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+        speedX: (Math.random() - 0.5) * 4,
+        speedY: (Math.random() - 0.5) * 4
+      };
+    }
+
+    function drawTargets() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      targets.forEach(target => {
+        ctx.beginPath();
+        ctx.fillStyle = target.color;
+        ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Hedefin hareketi
+        target.x += target.speedX;
+        target.y += target.speedY;
+        
+        // Duvarlardan sekme
+        if (target.x - target.radius < 0 || target.x + target.radius > canvas.width) {
+          target.speedX *= -1;
+        }
+        if (target.y - target.radius < 0 || target.y + target.radius > canvas.height) {
+          target.speedY *= -1;
+        }
+      });
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 30;
+      targets = [];
+      targetScore.textContent = `Puan: ${score}`;
+      targetTime.textContent = `Kalan Süre: ${timeLeft}`;
+      targetStart.disabled = true;
+      
+      // Zamanlayıcı
+      timerId = setInterval(() => {
+        timeLeft--;
+        targetTime.textContent = `Kalan Süre: ${timeLeft}`;
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+      
+      // Hedef oluşturma
+      targetInterval = setInterval(() => {
+        if (targets.length < 5) {
+          targets.push(createTarget());
+        }
+      }, 1000);
+      
+      // Oyun döngüsü
+      gameLoop();
+    }
+
+    function gameLoop() {
+      if (timeLeft <= 0) return;
+      drawTargets();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      clearInterval(timerId);
+      clearInterval(targetInterval);
+      targetStart.disabled = false;
+      alert(`Oyun bitti! Puanınız: ${score}`);
+    }
+
+    canvas.onclick = (e) => {
+      if (targetStart.disabled) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        for (let i = targets.length - 1; i >= 0; i--) {
+          const target = targets[i];
+          const dist = Math.hypot(x - target.x, y - target.y);
+          if (dist <= target.radius) {
+            targets.splice(i, 1);
+            score++;
+            targetScore.textContent = `Puan: ${score}`;
+            break;
+          }
+        }
+      }
+    };
+
+    targetStart.onclick = startGame;
+  }
+
+   /* --- 21. Sudoku --- */
+  function sudoku() {
+    gameArea.innerHTML = `
+      <h2>Sudoku</h2>
+      <div id="sudokuBoard" style="display:grid; grid-template-columns:repeat(9, 40px); grid-template-rows:repeat(9, 40px); gap:1px; justify-content:center; margin:1rem auto; background:#000;"></div>
+      <button class="game-btn" id="sudokuNew" style="display:block; margin:1rem auto 0 auto;">Yeni Oyun</button>
+      <button class="game-btn" id="sudokuCheck" style="display:block; margin:1rem auto 0 auto;">Kontrol Et</button>
+      <p id="sudokuResult" style="text-align:center; font-weight:bold; margin-top:1rem;"></p>
+    `;
+
+    const board = document.getElementById('sudokuBoard');
+    const newBtn = document.getElementById('sudokuNew');
+    const checkBtn = document.getElementById('sudokuCheck');
+    const resultEl = document.getElementById('sudokuResult');
+
+    // Basit bir Sudoku tahtası oluştur
+    function createBoard() {
+      board.innerHTML = '';
+      resultEl.textContent = '';
+      
+      // Örnek bir Sudoku tahtası (kolay seviye)
+      const puzzle = [
+        [5, 3, 0, 0, 7, 0, 0, 0, 0],
+        [6, 0, 0, 1, 9, 5, 0, 0, 0],
+        [0, 9, 8, 0, 0, 0, 0, 6, 0],
+        [8, 0, 0, 0, 6, 0, 0, 0, 3],
+        [4, 0, 0, 8, 0, 3, 0, 0, 1],
+        [7, 0, 0, 0, 2, 0, 0, 0, 6],
+        [0, 6, 0, 0, 0, 0, 2, 8, 0],
+        [0, 0, 0, 4, 1, 9, 0, 0, 5],
+        [0, 0, 0, 0, 8, 0, 0, 7, 9]
+      ];
+
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          const cell = document.createElement('input');
+          cell.type = 'text';
+          cell.maxLength = 1;
+          cell.style.width = '40px';
+          cell.style.height = '40px';
+          cell.style.textAlign = 'center';
+          cell.style.fontSize = '1.2rem';
+          cell.style.border = 'none';
+          cell.style.backgroundColor = '#fff';
+          
+          if (puzzle[row][col] !== 0) {
+            cell.value = puzzle[row][col];
+            cell.readOnly = true;
+            cell.style.backgroundColor = '#eee';
+          }
+          
+          // 3x3 bloklarda arka plan rengi
+          if (Math.floor(row / 3) % 2 === Math.floor(col / 3) % 2) {
+            cell.style.backgroundColor = cell.readOnly ? '#ddd' : '#f9f9f9';
+          }
+          
+          board.appendChild(cell);
+        }
+      }
+    }
+
+    function checkSolution() {
+      const cells = board.querySelectorAll('input');
+      let valid = true;
+      
+      // Satır kontrolü
+      for (let row = 0; row < 9; row++) {
+        const nums = new Set();
+        for (let col = 0; col < 9; col++) {
+          const val = cells[row * 9 + col].value;
+          if (val && nums.has(val)) {
+            valid = false;
+            break;
+          }
+          nums.add(val);
+        }
+        if (!valid) break;
+      }
+      
+      // Sütun kontrolü
+      if (valid) {
+        for (let col = 0; col < 9; col++) {
+          const nums = new Set();
+          for (let row = 0; row < 9; row++) {
+            const val = cells[row * 9 + col].value;
+            if (val && nums.has(val)) {
+              valid = false;
+              break;
+            }
+            nums.add(val);
+          }
+          if (!valid) break;
+        }
+      }
+      
+      // 3x3 blok kontrolü
+      if (valid) {
+        for (let boxRow = 0; boxRow < 3; boxRow++) {
+          for (let boxCol = 0; boxCol < 3; boxCol++) {
+            const nums = new Set();
+            for (let row = 0; row < 3; row++) {
+              for (let col = 0; col < 3; col++) {
+                const val = cells[(boxRow * 3 + row) * 9 + (boxCol * 3 + col)].value;
+                if (val && nums.has(val)) {
+                  valid = false;
+                  break;
+                }
+                nums.add(val);
+              }
+              if (!valid) break;
+            }
+            if (!valid) break;
+          }
+          if (!valid) break;
+        }
+      }
+      
+      resultEl.textContent = valid ? 'Tebrikler! Sudoku doğru.' : 'Sudoku yanlış, kontrol edin!';
+    }
+
+    newBtn.onclick = createBoard;
+    checkBtn.onclick = checkSolution;
+    
+    createBoard();
+  }
+
+  /* --- 22. Mayın Tarlası --- */
+  function mayinTarlasi() {
+    const size = 10;
+    const mineCount = 15;
+
+    gameArea.innerHTML = `
+      <h2>Mayın Tarlası</h2>
+      <div id="minesweeperBoard" style="display:grid; grid-template-columns:repeat(${size}, 30px); grid-template-rows:repeat(${size}, 30px); gap:2px; justify-content:center; margin:1rem auto;"></div>
+      <p id="minesweeperStatus" style="text-align:center; font-weight:bold; margin-top:1rem;">Mayın sayısı: ${mineCount}</p>
+      <button class="game-btn" id="minesweeperNew" style="display:block; margin:1rem auto 0 auto;">Yeni Oyun</button>
+    `;
+
+    const board = document.getElementById('minesweeperBoard');
+    const statusEl = document.getElementById('minesweeperStatus');
+    const newBtn = document.getElementById('minesweeperNew');
+
+    let grid = [];
+    let revealed = 0;
+    let gameOver = false;
+
+    function createBoard() {
+      board.innerHTML = '';
+      grid = [];
+      revealed = 0;
+      gameOver = false;
+      statusEl.textContent = `Mayın sayısı: ${mineCount}`;
+      
+      // Boş grid oluştur
+      for (let i = 0; i < size; i++) {
+        grid[i] = [];
+        for (let j = 0; j < size; j++) {
+          grid[i][j] = { isMine: false, revealed: false, flagged: false, neighborCount: 0 };
+        }
+      }
+      
+      // Mayınları yerleştir
+      let minesPlaced = 0;
+      while (minesPlaced < mineCount) {
+        const x = Math.floor(Math.random() * size);
+        const y = Math.floor(Math.random() * size);
+        if (!grid[x][y].isMine) {
+          grid[x][y].isMine = true;
+          minesPlaced++;
+        }
+      }
+      
+      // Komşu mayın sayılarını hesapla
+      for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+          if (!grid[x][y].isMine) {
+            let count = 0;
+            for (let dx = -1; dx <= 1; dx++) {
+              for (let dy = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0) continue;
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx >= 0 && nx < size && ny >= 0 && ny < size && grid[nx][ny].isMine) {
+                  count++;
+                }
+              }
+            }
+            grid[x][y].neighborCount = count;
+          }
+        }
+      }
+      
+      // Hücreleri oluştur
+      for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+          const cell = document.createElement('div');
+          cell.style.width = '30px';
+          cell.style.height = '30px';
+          cell.style.backgroundColor = '#357ABD';
+          cell.style.display = 'flex';
+          cell.style.justifyContent = 'center';
+          cell.style.alignItems = 'center';
+          cell.style.cursor = 'pointer';
+          cell.style.userSelect = 'none';
+          
+          cell.onclick = () => revealCell(x, y);
+          cell.oncontextmenu = (e) => {
+            e.preventDefault();
+            flagCell(x, y);
+          };
+          
+          board.appendChild(cell);
+        }
+      }
+    }
+
+    function revealCell(x, y) {
+      if (gameOver || grid[x][y].revealed || grid[x][y].flagged) return;
+      
+      const cell = board.children[x * size + y];
+      grid[x][y].revealed = true;
+      
+      if (grid[x][y].isMine) {
+        // Mayına bastı - oyun bitti
+        cell.style.backgroundColor = '#f00';
+        cell.textContent = '💣';
+        gameOver = true;
+        revealAllMines();
+        statusEl.textContent = 'Kaybettiniz!';
+      } else {
+        revealed++;
+        if (grid[x][y].neighborCount > 0) {
+          cell.textContent = grid[x][y].neighborCount;
+          cell.style.backgroundColor = '#eee';
+        } else {
+          // Boş hücre - etrafındakileri aç
+          cell.style.backgroundColor = '#ddd';
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              if (dx === 0 && dy === 0) continue;
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+                revealCell(nx, ny);
+              }
+            }
+          }
+        }
+        
+        // Kazanma kontrolü
+        if (revealed === size * size - mineCount) {
+          gameOver = true;
+          statusEl.textContent = 'Tebrikler! Kazandınız!';
+        }
+      }
+    }
+
+    function flagCell(x, y) {
+      if (gameOver || grid[x][y].revealed) return;
+      
+      const cell = board.children[x * size + y];
+      grid[x][y].flagged = !grid[x][y].flagged;
+      
+      if (grid[x][y].flagged) {
+        cell.textContent = '🚩';
+      } else {
+        cell.textContent = '';
+      }
+    }
+
+    function revealAllMines() {
+      for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+          if (grid[x][y].isMine) {
+            const cell = board.children[x * size + y];
+            cell.style.backgroundColor = '#f00';
+            cell.textContent = '💣';
+          }
+        }
+      }
+    }
+
+    newBtn.onclick = createBoard;
+    createBoard();
+  }
+
+  /* --- 23. Adam Asmaca --- */
+  function adamAsmaca() {
+    const words = ['javascript', 'bilgisayar', 'programlama', 'teknoloji', 'internet', 'algoritma', 'yazılım', 'donanım'];
+    let word = '';
+    let guessed = [];
+    let wrongGuesses = 0;
+    const maxWrong = 6;
+
+    gameArea.innerHTML = `
+      <h2>Adam Asmaca</h2>
+      <div style="display:flex; justify-content:center; margin:1rem 0;">
+        <div id="hangmanDrawing" style="width:150px; height:200px; position:relative;">
+          <!-- Çizim buraya eklenecek -->
+        </div>
+      </div>
+      <p id="hangmanWord" style="text-align:center; font-size:1.5rem; letter-spacing:5px; margin:1rem 0;"></p>
+      <p id="hangmanLetters" style="text-align:center; margin:1rem 0;">Kullanılan harfler: </p>
+      <p id="hangmanStatus" style="text-align:center; font-weight:bold;"></p>
+      <input type="text" id="hangmanInput" maxlength="1" style="display:block; margin:0 auto; width:50px; text-align:center; font-size:1.2rem; border-radius:8px; border:none;">
+      <button class="game-btn" id="hangmanGuess" style="display:block; margin:1rem auto 0 auto;">Tahmin Et</button>
+      <button class="game-btn" id="hangmanNew" style="display:block; margin:1rem auto 0 auto;">Yeni Oyun</button>
+    `;
+
+    const drawingEl = document.getElementById('hangmanDrawing');
+    const wordEl = document.getElementById('hangmanWord');
+    const lettersEl = document.getElementById('hangmanLetters');
+    const statusEl = document.getElementById('hangmanStatus');
+    const inputEl = document.getElementById('hangmanInput');
+    const guessBtn = document.getElementById('hangmanGuess');
+    const newBtn = document.getElementById('hangmanNew');
+
+    function startGame() {
+      word = words[Math.floor(Math.random() * words.length)];
+      guessed = [];
+      wrongGuesses = 0;
+      updateDisplay();
+      inputEl.value = '';
+      statusEl.textContent = '';
+      drawHangman();
+    }
+
+    function updateDisplay() {
+      // Kelimeyi göster (bilinen harfler ve boşluklar)
+      let display = '';
+      for (const letter of word) {
+        display += guessed.includes(letter) ? letter : '_';
+        display += ' ';
+      }
+      wordEl.textContent = display.trim();
+      
+      // Kullanılan harfleri göster
+      lettersEl.textContent = `Kullanılan harfler: ${guessed.join(', ')}`;
+      
+      // Kazanma/kaybetme kontrolü
+      if (word.split('').every(letter => guessed.includes(letter))) {
+        statusEl.textContent = 'Tebrikler! Kazandınız!';
+        inputEl.disabled = true;
+        guessBtn.disabled = true;
+      } else if (wrongGuesses >= maxWrong) {
+        statusEl.textContent = `Kaybettiniz! Doğru kelime: ${word}`;
+        inputEl.disabled = true;
+        guessBtn.disabled = true;
+      }
+    }
+
+    function drawHangman() {
+      drawingEl.innerHTML = '';
+      const parts = [
+        // Darağacı
+        () => { drawingEl.innerHTML += '<div style="position:absolute; bottom:0; left:50%; width:4px; height:20px; background:#fff; transform:translateX(-50%);"></div>'; },
+        () => { drawingEl.innerHTML += '<div style="position:absolute; bottom:20px; left:50%; width:80px; height:4px; background:#fff; transform:translateX(-50%);"></div>'; },
+        () => { drawingEl.innerHTML += '<div style="position:absolute; bottom:20px; left:calc(50% + 38px); width:4px; height:30px; background:#fff;"></div>'; },
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:50px; left:calc(50% + 38px); width:40px; height:4px; background:#fff;"></div>'; },
+        // Adam
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:54px; left:calc(50% + 58px); width:4px; height:20px; background:#f00; transform:translateX(-50%);"></div>'; }, // İp
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:74px; left:calc(50% + 58px); width:30px; height:30px; border-radius:50%; border:4px solid #f00; transform:translateX(-50%);"></div>'; }, // Kafa
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:104px; left:calc(50% + 58px); width:4px; height:40px; background:#f00; transform:translateX(-50%);"></div>'; }, // Gövde
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:110px; left:calc(50% + 45px); width:25px; height:4px; background:#f00; transform:rotate(-30deg);"></div>'; }, // Sol kol
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:110px; left:calc(50% + 65px); width:25px; height:4px; background:#f00; transform:rotate(30deg);"></div>'; }, // Sağ kol
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:144px; left:calc(50% + 45px); width:25px; height:4px; background:#f00; transform:rotate(-20deg);"></div>'; }, // Sol bacak
+        () => { drawingEl.innerHTML += '<div style="position:absolute; top:144px; left:calc(50% + 65px); width:25px; height:4px; background:#f00; transform:rotate(20deg);"></div>'; }  // Sağ bacak
+      ];
+      
+      for (let i = 0; i < wrongGuesses; i++) {
+        if (i < parts.length) parts[i]();
+      }
+    }
+
+    function makeGuess() {
+      const letter = inputEl.value.toLowerCase();
+      inputEl.value = '';
+      
+      if (!letter || !/^[a-zğüşıöç]$/.test(letter)) {
+        statusEl.textContent = 'Lütfen geçerli bir harf girin!';
+        return;
+      }
+      
+      if (guessed.includes(letter)) {
+        statusEl.textContent = 'Bu harfi zaten tahmin ettiniz!';
+        return;
+      }
+      
+      guessed.push(letter);
+      
+      if (!word.includes(letter)) {
+        wrongGuesses++;
+        statusEl.textContent = 'Yanlış tahmin!';
+      } else {
+        statusEl.textContent = 'Doğru tahmin!';
+      }
+      
+      drawHangman();
+      updateDisplay();
+    }
+
+    guessBtn.onclick = makeGuess;
+    inputEl.onkeydown = (e) => e.key === 'Enter' && makeGuess();
+    newBtn.onclick = startGame;
+    
+    startGame();
+  }
+
+  /* --- 24. 4 İşlem Oyunu --- */
+  function dortIslemOyunu() {
+    let score = 0;
+    let timeLeft = 60;
+    let timerId;
+    let currentProblem = null;
+
+    gameArea.innerHTML = `
+      <h2>4 İşlem Oyunu</h2>
+      <p id="mathProblem" style="text-align:center; font-size:1.5rem; font-weight:bold;"></p>
+      <input type="number" id="mathAnswer" style="display:block; margin:1rem auto; padding:0.5rem; font-size:1.2rem; width:150px; text-align:center; border-radius:8px; border:none;">
+      <p id="mathScore" style="text-align:center; font-weight:bold;">Puan: 0</p>
+      <p id="mathTime" style="text-align:center; font-weight:bold;">Kalan Süre: 60</p>
+      <button class="game-btn" id="mathStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+    `;
+
+    const problemEl = document.getElementById('mathProblem');
+    const answerEl = document.getElementById('mathAnswer');
+    const scoreEl = document.getElementById('mathScore');
+    const timeEl = document.getElementById('mathTime');
+    const startBtn = document.getElementById('mathStart');
+
+    function generateProblem() {
+      const operations = ['+', '-', '*', '/'];
+      const op = operations[Math.floor(Math.random() * operations.length)];
+      let a, b;
+      
+      switch(op) {
+        case '+':
+          a = Math.floor(Math.random() * 50) + 1;
+          b = Math.floor(Math.random() * 50) + 1;
+          break;
+        case '-':
+          a = Math.floor(Math.random() * 50) + 1;
+          b = Math.floor(Math.random() * a) + 1;
+          break;
+        case '*':
+          a = Math.floor(Math.random() * 12) + 1;
+          b = Math.floor(Math.random() * 12) + 1;
+          break;
+        case '/':
+          b = Math.floor(Math.random() * 10) + 1;
+          a = b * (Math.floor(Math.random() * 10) + 1);
+          break;
+      }
+      
+      currentProblem = { a, b, op, answer: eval(`${a} ${op} ${b}`) };
+      problemEl.textContent = `${a} ${op} ${b} = ?`;
+      answerEl.value = '';
+      answerEl.focus();
+    }
+
+    function checkAnswer() {
+      const userAnswer = parseFloat(answerEl.value);
+      if (isNaN(userAnswer)) {
+        alert('Lütfen geçerli bir sayı girin!');
+        return;
+      }
+      
+      if (Math.abs(userAnswer - currentProblem.answer) < 0.001) {
+        score += 10;
+        scoreEl.textContent = `Puan: ${score}`;
+      }
+      
+      generateProblem();
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 60;
+      scoreEl.textContent = `Puan: ${score}`;
+      timeEl.textContent = `Kalan Süre: ${timeLeft}`;
+      startBtn.disabled = true;
+      answerEl.disabled = false;
+      
+      generateProblem();
+      
+      timerId = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = `Kalan Süre: ${timeLeft}`;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          answerEl.disabled = true;
+          startBtn.disabled = false;
+          alert(`Oyun bitti! Toplam puanınız: ${score}`);
+        }
+      }, 1000);
+    }
+
+    answerEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+    startBtn.onclick = startGame;
+  }
+
+  /* --- 25. Zamana Karşı Sayılar --- */
+  function zamanaKarsiSayilar() {
+    let targetNumber = 0;
+    let currentNumber = 0;
+    let timeLeft = 30;
+    let timerId;
+
+    gameArea.innerHTML = `
+      <h2>Zamana Karşı Sayılar</h2>
+      <p id="numberTarget" style="text-align:center; font-size:2rem; font-weight:bold;"></p>
+      <p id="numberCurrent" style="text-align:center; font-size:1.5rem;">Şu anki sayı: 0</p>
+      <div style="display:flex; justify-content:center; gap:10px; margin:1rem 0;">
+        <button class="game-btn" id="numberAdd">+1</button>
+        <button class="game-btn" id="numberSub">-1</button>
+        <button class="game-btn" id="numberMul">×2</button>
+        <button class="game-btn" id="numberDiv">÷2</button>
+      </div>
+      <p id="numberTime" style="text-align:center; font-weight:bold;">Kalan Süre: 30</p>
+      <button class="game-btn" id="numberStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+    `;
+
+    const targetEl = document.getElementById('numberTarget');
+    const currentEl = document.getElementById('numberCurrent');
+    const timeEl = document.getElementById('numberTime');
+    const addBtn = document.getElementById('numberAdd');
+    const subBtn = document.getElementById('numberSub');
+    const mulBtn = document.getElementById('numberMul');
+    const divBtn = document.getElementById('numberDiv');
+    const startBtn = document.getElementById('numberStart');
+
+    function updateButtons() {
+      const disabled = timeLeft <= 0 || startBtn.disabled === false;
+      addBtn.disabled = disabled;
+      subBtn.disabled = disabled;
+      mulBtn.disabled = disabled;
+      divBtn.disabled = disabled;
+    }
+
+    function updateGame() {
+      currentEl.textContent = `Şu anki sayı: ${currentNumber}`;
+      
+      if (currentNumber === targetNumber) {
+        clearInterval(timerId);
+        alert(`Tebrikler! Hedef sayıya ulaştınız. Kalan süre: ${timeLeft}`);
+        startBtn.disabled = false;
+        updateButtons();
+      }
+    }
+
+    function startGame() {
+      targetNumber = Math.floor(Math.random() * 50) + 10;
+      currentNumber = 0;
+      timeLeft = 30;
+      
+      targetEl.textContent = `Hedef: ${targetNumber}`;
+      currentEl.textContent = `Şu anki sayı: 0`;
+      timeEl.textContent = `Kalan Süre: 30`;
+      startBtn.disabled = true;
+      updateButtons();
+      
+      timerId = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = `Kalan Süre: ${timeLeft}`;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          startBtn.disabled = false;
+          updateButtons();
+          alert(`Süre bitti! Hedef sayı: ${targetNumber}, ulaştığınız sayı: ${currentNumber}`);
+        }
+      }, 1000);
+    }
+
+    addBtn.onclick = () => { currentNumber += 1; updateGame(); };
+    subBtn.onclick = () => { currentNumber -= 1; updateGame(); };
+    mulBtn.onclick = () => { currentNumber *= 2; updateGame(); };
+    divBtn.onclick = () => { currentNumber = Math.floor(currentNumber / 2); updateGame(); };
+    startBtn.onclick = startGame;
+  }
+
+   /* --- 26. Büyüyen Kutular --- */
+  function buyuyenKutular() {
+    let boxes = [];
+    let score = 0;
+    let timeLeft = 60;
+    let timerId;
+
+    gameArea.innerHTML = `
+      <h2>Büyüyen Kutular</h2>
+      <div id="growingBoxes" style="position:relative; width:400px; height:300px; margin:1rem auto; background:#222; border-radius:12px; overflow:hidden;"></div>
+      <p id="boxScore" style="text-align:center; font-weight:bold;">Puan: 0</p>
+      <p id="boxTime" style="text-align:center; font-weight:bold;">Kalan Süre: 60</p>
+      <button class="game-btn" id="boxStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+    `;
+
+    const container = document.getElementById('growingBoxes');
+    const scoreEl = document.getElementById('boxScore');
+    const timeEl = document.getElementById('boxTime');
+    const startBtn = document.getElementById('boxStart');
+
+    function createBox() {
+      const box = document.createElement('div');
+      const size = 30;
+      const x = Math.random() * (container.clientWidth - size);
+      const y = Math.random() * (container.clientHeight - size);
+      const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+      
+      box.style.position = 'absolute';
+      box.style.width = `${size}px`;
+      box.style.height = `${size}px`;
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.backgroundColor = color;
+      box.style.borderRadius = '4px';
+      box.style.cursor = 'pointer';
+      
+      box.onclick = () => {
+        if (timeLeft <= 0) return;
+        score += Math.floor(100 / parseInt(box.style.width));
+        scoreEl.textContent = `Puan: ${score}`;
+        container.removeChild(box);
+        boxes = boxes.filter(b => b !== box);
+      };
+      
+      container.appendChild(box);
+      boxes.push(box);
+    }
+
+    function growBoxes() {
+      boxes.forEach(box => {
+        const currentSize = parseInt(box.style.width);
+        box.style.width = `${currentSize + 2}px`;
+        box.style.height = `${currentSize + 2}px`;
+        box.style.left = `${parseInt(box.style.left) - 1}px`;
+        box.style.top = `${parseInt(box.style.top) - 1}px`;
+        
+        // Eğer kutu çok büyüdüyse kaldır
+        if (currentSize > 150) {
+          container.removeChild(box);
+          boxes = boxes.filter(b => b !== box);
+        }
+      });
+    }
+
+    function startGame() {
+      // Temizle
+      container.innerHTML = '';
+      boxes = [];
+      score = 0;
+      timeLeft = 60;
+      
+      scoreEl.textContent = `Puan: 0`;
+      timeEl.textContent = `Kalan Süre: 60`;
+      startBtn.disabled = true;
+      
+      // Yeni kutular oluştur
+      for (let i = 0; i < 5; i++) {
+        createBox();
+      }
+      
+      // Oyun döngüsü
+      const gameLoop = setInterval(() => {
+        growBoxes();
+        
+        // Rastgele yeni kutu ekle
+        if (Math.random() < 0.1) {
+          createBox();
+        }
+      }, 500);
+      
+      // Zamanlayıcı
+      timerId = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = `Kalan Süre: ${timeLeft}`;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          clearInterval(gameLoop);
+          startBtn.disabled = false;
+          alert(`Oyun bitti! Toplam puanınız: ${score}`);
+        }
+      }, 1000);
+    }
+
+    startBtn.onclick = startGame;
+  }
+
+  /* --- 27. Refleks Testi --- */
+  function refleksTesti() {
+    let startTime = 0;
+    let waiting = false;
+    let bestTime = Infinity;
+    let attempts = 0;
+
+    gameArea.innerHTML = `
+      <h2>Refleks Testi</h2>
+      <div id="reflexBox" style="width:200px; height:200px; background:#f00; margin:2rem auto; border-radius:15px; cursor:pointer;"></div>
+      <p id="reflexMessage" style="text-align:center; font-weight:bold;">Başlamak için "Bekle" yazısını görünce tıklayın</p>
+      <p id="reflexTime" style="text-align:center;">Son deneme: -</p>
+      <p id="reflexBest" style="text-align:center;">En iyi süre: -</p>
+      <button class="game-btn" id="reflexStart" style="display:block; margin:1rem auto 0 auto;">Başlat</button>
+    `;
+
+    const box = document.getElementById('reflexBox');
+    const message = document.getElementById('reflexMessage');
+    const timeEl = document.getElementById('reflexTime');
+    const bestEl = document.getElementById('reflexBest');
+    const startBtn = document.getElementById('reflexStart');
+
+    function startTest() {
+      waiting = true;
+      box.style.backgroundColor = '#f00';
+      message.textContent = 'Hazır olun...';
+      startBtn.disabled = true;
+      
+      // Rastgele bekleme süresi (1-4 saniye)
+      setTimeout(() => {
+        if (waiting) {
+          box.style.backgroundColor = '#0f0';
+          message.textContent = 'TIKLA ŞİMDİ!';
+          startTime = Date.now();
+        }
+      }, 1000 + Math.random() * 3000);
+    }
+
+    function boxClicked() {
+      if (!waiting) {
+        startTest();
+        return;
+      }
+      
+      const endTime = Date.now();
+      
+      if (box.style.backgroundColor === 'rgb(0, 255, 0)') {
+        const reactionTime = endTime - startTime;
+        timeEl.textContent = `Son deneme: ${reactionTime} ms`;
+        
+        if (reactionTime < bestTime) {
+          bestTime = reactionTime;
+          bestEl.textContent = `En iyi süre: ${bestTime} ms`;
+        }
+        
+        attempts++;
+        waiting = false;
+        box.style.backgroundColor = '#357ABD';
+        message.textContent = `Tepki süreniz: ${reactionTime} ms (Tekrar başlamak için tıklayın)`;
+        startBtn.disabled = false;
+      } else {
+        message.textContent = 'Çok erken tıkladınız! Yeniden başlatılıyor...';
+        setTimeout(() => {
+          startTest();
+        }, 1000);
+      }
+    }
+
+    box.onclick = boxClicked;
+    startBtn.onclick = startTest;
+  }
+    /* --- 28. Eşitlik Bul --- */
+  function esitlikBul() {
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+
+    gameArea.innerHTML = `
+      <h2>Eşitlik Bul</h2>
+      <div id="equalityBoard" style="display:grid; grid-template-columns:repeat(4, 80px); grid-gap:10px; justify-content:center; margin:1rem auto;"></div>
+      <p id="equalityMoves" style="text-align:center; margin-top:1rem;">Hamleler: 0</p>
+      <button class="game-btn" id="equalityRestart" style="display:block; margin:1rem auto 0 auto;">Yeniden Başlat</button>
+    `;
+
+    const board = document.getElementById('equalityBoard');
+    const movesEl = document.getElementById('equalityMoves');
+    const restartBtn = document.getElementById('equalityRestart');
+
+    // Eşitlik çiftleri oluştur
+    const equalities = [
+      { left: '2+2', right: '4' },
+      { left: '5×3', right: '15' },
+      { left: '10-4', right: '6' },
+      { left: '12÷3', right: '4' },
+      { left: '7+8', right: '15' },
+      { left: '9×2', right: '18' },
+      { left: '20-7', right: '13' },
+      { left: '16÷4', right: '4' }
+    ];
+
+    function createCards() {
+      // Tüm kartları oluştur (sol ve sağ taraflar)
+      cards = [];
+      equalities.forEach(eq => {
+        cards.push({ type: 'left', content: eq.left, pair: eq.right });
+        cards.push({ type: 'right', content: eq.right, pair: eq.left });
+      });
+      
+      // Karıştır
+      cards = cards.sort(() => Math.random() - 0.5);
+    }
+
+    function renderBoard() {
+      board.innerHTML = '';
+      moves = 0;
+      matchedPairs = 0;
+      flippedCards = [];
+      movesEl.textContent = 'Hamleler: 0';
+      
+      cards.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'memory-card';
+        cardEl.textContent = '?';
+        cardEl.dataset.index = index;
+        cardEl.onclick = () => flipCard(index);
+        board.appendChild(cardEl);
+      });
+    }
+
+    function flipCard(index) {
+      const card = cards[index];
+      const cardEl = board.children[index];
+      
+      // Zaten eşleşmişse veya zaten açıksa
+      if (card.matched || cardEl.classList.contains('flipped')) return;
+      
+      // Aç
+      cardEl.textContent = card.content;
+      cardEl.classList.add('flipped');
+      flippedCards.push(index);
+      
+      // Eğer 2 kart açıksa kontrol et
+      if (flippedCards.length === 2) {
+        moves++;
+        movesEl.textContent = `Hamleler: ${moves}`;
+        
+        const firstCard = cards[flippedCards[0]];
+        const secondCard = cards[flippedCards[1]];
+        
+        // Eşleşme kontrolü
+        if ((firstCard.type === 'left' && secondCard.type === 'right' && firstCard.content === secondCard.pair) || 
+            (firstCard.type === 'right' && secondCard.type === 'left' && firstCard.pair === secondCard.content)) {
+          // Eşleşme bulundu
+          firstCard.matched = true;
+          secondCard.matched = true;
+          matchedPairs++;
+          
+          if (matchedPairs === equalities.length) {
+            setTimeout(() => {
+              alert(`Tebrikler! Tüm eşleşmeleri ${moves} hamlede buldunuz.`);
+            }, 500);
+          }
+          
+          flippedCards = [];
+        } else {
+          // Eşleşme yok, kartları kapat
+          setTimeout(() => {
+            flippedCards.forEach(i => {
+              board.children[i].textContent = '?';
+              board.children[i].classList.remove('flipped');
+            });
+            flippedCards = [];
+          }, 1000);
+        }
+      }
+    }
+
+    function startGame() {
+      createCards();
+      renderBoard();
+    }
+
+    restartBtn.onclick = startGame;
+    startGame();
+  }
+
+  /* --- 29. Sürükle Bırak --- */
+  function surukleBirak() {
+    gameArea.innerHTML = `
+      <h2>Sürükle Bırak</h2>
+      <div style="display:flex; justify-content:space-around; margin:2rem 0;">
+        <div id="dragContainer" style="width:150px; min-height:200px; background:#357ABD33; border-radius:12px; padding:10px;">
+          <div class="draggable" style="width:100%; height:40px; background:#f00; margin-bottom:10px; border-radius:8px; cursor:move; user-select:none;"></div>
+          <div class="draggable" style="width:100%; height:40px; background:#0f0; margin-bottom:10px; border-radius:8px; cursor:move; user-select:none;"></div>
+          <div class="draggable" style="width:100%; height:40px; background:#00f; margin-bottom:10px; border-radius:8px; cursor:move; user-select:none;"></div>
+        </div>
+        <div id="dropContainer" style="width:150px; min-height:200px; background:#357ABD33; border-radius:12px; padding:10px;"></div>
+      </div>
+      <button class="game-btn" id="dragReset" style="display:block; margin:1rem auto 0 auto;">Sıfırla</button>
+    `;
+
+    const dragContainer = document.getElementById('dragContainer');
+    const dropContainer = document.getElementById('dropContainer');
+    const resetBtn = document.getElementById('dragReset');
+
+    let draggedItem = null;
+
+    function setupDragAndDrop() {
+      const draggables = document.querySelectorAll('.draggable');
+      
+      draggables.forEach(item => {
+        item.draggable = true;
+        
+        item.addEventListener('dragstart', () => {
+          draggedItem = item;
+          setTimeout(() => {
+            item.style.opacity = '0.4';
+          }, 0);
+        });
+        
+        item.addEventListener('dragend', () => {
+          setTimeout(() => {
+            item.style.opacity = '1';
+            draggedItem = null;
+          }, 0);
+        });
+      });
+      
+      [dragContainer, dropContainer].forEach(container => {
+        container.addEventListener('dragover', e => {
+          e.preventDefault();
+        });
+        
+        container.addEventListener('dragenter', e => {
+          e.preventDefault();
+          container.style.backgroundColor = '#357ABD66';
+        });
+        
+        container.addEventListener('dragleave', () => {
+          container.style.backgroundColor = '#357ABD33';
+        });
+        
+        container.addEventListener('drop', e => {
+          e.preventDefault();
+          container.style.backgroundColor = '#357ABD33';
+          if (draggedItem) {
+            container.appendChild(draggedItem);
+          }
+        });
+      });
+    }
+
+    function resetContainers() {
+      dragContainer.innerHTML = `
+        <div class="draggable" style="width:100%; height:40px; background:#f00; margin-bottom:10px; border-radius:8px; cursor:move; user-select:none;"></div>
+        <div class="draggable" style="width:100%; height:40px; background:#0f0; margin-bottom:10px; border-radius:8px; cursor:move; user-select:none;"></div>
+        <div class="draggable" style="width:100%; height:40px; background:#00f; margin-bottom:10px; border-radius:8px; cursor:move; user-select:none;"></div>
+      `;
+      dropContainer.innerHTML = '';
+      setupDragAndDrop();
+    }
+
+    resetBtn.onclick = resetContainers;
+    setupDragAndDrop();
+  }
+  
   /* --- 16. Basit FPS (Mouse ile Dönme) --- */
   function basitFPS() {
     gameArea.innerHTML = `
@@ -1251,31 +2545,7 @@
     updateInfo();
   }
 
-  /* --- 17. Engelden Kaç (Kullanıcı Girişli) --- */
-  function loginPrompt() {
-    gameArea.innerHTML = `
-      <h2>Kullanıcı Girişi</h2>
-      <p style="text-align:center;">Lütfen giriş yapın</p>
-      <input id="username" placeholder="Kullanıcı Adı" style="display:block; margin:0.5rem auto; padding:0.5rem; font-size:1.1rem; border-radius:10px; width:200px;" />
-      <input id="password" type="password" placeholder="Şifre" style="display:block; margin:0.5rem auto; padding:0.5rem; font-size:1.1rem; border-radius:10px; width:200px;" />
-      <button class="game-btn" id="loginBtn" style="display:block; margin:1rem auto;">Giriş Yap</button>
-      <p id="loginMessage" style="text-align:center; font-weight:bold; color:red;"></p>
-    `;
-
-    document.getElementById('loginBtn').onclick = () => {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      const message = document.getElementById('loginMessage');
-      if(user === 'AREA' && pass === '36451344516') {
-        message.style.color = 'green';
-        message.textContent = 'Giriş başarılı! Oyuna yönlendiriliyorsunuz...';
-        setTimeout(() => engeldenKac(true), 1000);
-      } else {
-        message.style.color = 'red';
-        message.textContent = 'Kullanıcı adı veya şifre yanlış.';
-      }
-    };
-  }
+ 
 
   /* --- Ana Menü ve Başlangıç --- */
   function mainMenu() {
